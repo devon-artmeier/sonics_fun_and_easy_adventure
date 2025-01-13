@@ -43,6 +43,7 @@ TitleScreen:
 		bsr.w	SEGA_FMV			; Run SEGA FMV
 
 TitleScreen2:
+		bsr.w	FadeToWhite			; Fade to white
 		intsOff
 
 		clr.b	r_Art_Cheat.w
@@ -50,9 +51,6 @@ TitleScreen2:
 		clrRAM	r_Objects
 
 		move.w	#$8200|($C000/$400),VDP_CTRL	; Reset plane A address
-		bsr.w	FadeToWhite			; Fade to white
-
-		intsOff
 		bsr.w	ClearScreen			; Clear screen
 
 		lea	MapEni_TitleBG,a0		; Decompress background mappings
