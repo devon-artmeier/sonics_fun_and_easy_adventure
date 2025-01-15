@@ -143,7 +143,6 @@ VInt_Routines:
 		dc.w	VInt_General-VInt_Routines	; General routine
 		dc.w	VInt_Level-VInt_Routines	; Level routine
 		dc.w	VInt_LevelLoad-VInt_Routines	; Level load routine
-		dc.w	VInt_FMV-VInt_Routines		; FMV routine
 		dc.w	VInt_Title-VInt_Routines	; Title screen routine
 		dc.w	VInt_Fade-VInt_Routines		; Fade routine
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -240,31 +239,6 @@ VInt_Level:
 .DoUpdates:
 		jsr	Level_UpdateHUD			; Update the HUD
 		bra.w	SetKosBookmark			; Set Kosinski decompression bookmark
-; ---------------------------------------------------------------------------------------------------------------------------------------------------------
-; V-INT FMV update routine
-; ---------------------------------------------------------------------------------------------------------------------------------------------------------
-VInt_FMV:
-		stopZ80
-		bsr.w	ReadJoypads			; Read joypads
-
-		dma68k	r_Palette,0,$80,CRAM		; Load palette into CRAM
-		
-		tst.b	r_FMV_Load.w			; Should we load new data?
-		beq.s	.End				; If not, branch
-		tst.b	r_FMV_Plane.w			; Are we on plane 1?
-		beq.s	.Plane0				; If not, branch
-		dma68k	r_Buffer,$A000,$1000,VRAM	; Load map buffer into VRAM
-		bra.s	.LoadArt			; Continue
-
-.Plane0:
-		dma68k	r_Buffer,$C000,$1000,VRAM	; Load map buffer into VRAM
-		
-.LoadArt:
-		bsr.w	ProcessDMAQueue			; Process DMA queue
-		startZ80
-
-.End:
-		rts
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------
 ; V-INT title screen update routine
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------

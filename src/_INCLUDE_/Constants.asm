@@ -19,7 +19,6 @@ vLag		rs.w	1				; Lag updates
 vGeneral	rs.w	1				; General updates
 vLevel		rs.w	1				; Level updates
 vLvlLoad	rs.w	1				; Level load updates
-vFMV		rs.w	1				; FMV updates
 vTitle		rs.w	1				; Title screen updates
 vFade		rs.w	1				; Fade updates
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------

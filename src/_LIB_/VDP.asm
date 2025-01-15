@@ -80,7 +80,6 @@ LoadPlaneMap_Custom:
 ;	d1.w	- Width in tiles (minus 1)
 ;	d2.w	- Height in tiles (minus 1)
 ;	d3.w	- Base tile properties for each tile
-;	d6.l	- Delta value for drawing to the next row (only required for just LoadPlaneMap_Custom)
 ;	a0.l	- Buffer to load into
 ;	a1.l	- Plane map address
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------

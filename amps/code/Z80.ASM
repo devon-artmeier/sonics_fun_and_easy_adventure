@@ -40,7 +40,7 @@ M_Flush02	macro
 		ld	e,(hl)				; 07	; load byte from OUT buffer 2 to volume pointer
 		ld	a,(de)				; 07	; copy to a
 		res	001h,h				; 08	; move back to OUT buffer 1
-		dec	d				; 04	; move back to volume pointer 1
+		zdec	d				; 04	; move back to volume pointer 1
 		ld	e,(hl)				; 07	; load byte from OUT buffer 1 to volume pointer
 		ex	de,hl				; 04	; swap for hl powers
 		zadd	a,(hl)				; 07	; add volume 1 to volume 2
@@ -54,8 +54,8 @@ M_Flush02	macro
 
 M_Revert01	macro
 		res	001h,h				; 08	; move back to OUT buffer 1
-		dec	d				; 04	; move back to volume pointer 1
-		dec	l				; 04	; move OUT buffers back
+		zdec	d				; 04	; move back to volume pointer 1
+		zdec	l				; 04	; move OUT buffers back
 		endm
 
 ; ---------------------------------------------------------------------------
@@ -63,13 +63,13 @@ M_Revert01	macro
 M_Revert02	macro
 		zset	001h,h				; 08	; move forwards to OUT buffer 2
 		inc	d				; 04	; move forwards to volume pointer 2
-		dec	l				; 04	; move OUT buffers back
+		zdec	l				; 04	; move OUT buffers back
 		endm
 
 ; ---------------------------------------------------------------------------
 
 M_Wrap		macro
-		dec	l				; 04	; check l...
+		zdec	l				; 04	; check l...
 		inc	l				; 04	; ''
 		M_WrapCondition
 		endm
@@ -119,7 +119,7 @@ Z80_Stack:
 ; ---------------------------------------------------------------------------
 
 BreakLate:
-		dec	iyh				; 08	; set "restore mode"
+		zdec	iyh				; 08	; set "restore mode"
 		ld	sp,Z80_Stack			; 10	; load valid stack address
 		push	af				; 11	; store a and flags
 		jp	BVB_Check			; 10	; jump to V-blank routine
@@ -246,7 +246,7 @@ BDMA_Flush01:
 			exx					; 04	; switch registers
 			M_Flush01				; 59	; flush a byte to the YM2612
 			exx					; 04	; switch registers
-		dec	d				; 04	; decrease counter
+		zdec	d				; 04	; decrease counter
 		jp	nz,BDMA_FlushLoop		; 10	; if we're not finished, branch
 
 ; ---------------------------------------------------------------------------
@@ -307,7 +307,7 @@ YM_Flush:
 YMF_NextByte:
 			M_Flush02				; 59	; flush a byte to the YM2612
 			exx					; 04	; switch registers
-		dec	sp				; 06	; move back (to get YM address)
+		zdec	sp				; 06	; move back (to get YM address)
 		pop	af				; 10	; get YM address
 		zor	a				; 04	; is this the end of the list?
 		jp	m,YMF_Finish02			; 10	; if so, branch
@@ -323,7 +323,7 @@ Z80_DelayYM1:	ld	b,007h				; 07	; delay a little longer...
 			exx					; 04	; switch registers
 			M_Flush01				; 59	; flush a byte to the YM2612
 			exx					; 04	; switch registers
-		dec	sp				; 06	; move back (to get YM address)
+		zdec	sp				; 06	; move back (to get YM address)
 		pop	af				; 10	; get YM address
 		zor	a				; 04	; is this the end of the list?
 		jp	m,YMF_Finish01			; 10	; if so, branch
@@ -337,13 +337,13 @@ Z80_DelayYM2:	ld	b,006h				; 07	; delay a little longer...
 		ld	l,b				; 04	; move address to 4000
 		ld	(hl),02Ah			; 10	; reset YM2612 to DAC port address
 			exx					; 04	; switch registers
-			dec	ixl				; 08	; decrease ix low byte counter
+			zdec	ixl				; 08	; decrease ix low byte counter
 			jp	nz,YMF_NextByte			; 10	; if it hasn't finished, branch
 
 	; --- Advance/Wrap OUT buffers ---
 
 			M_Wrap
-			dec	ixh				; 08	; decrease ix high byte counter
+			zdec	ixh				; 08	; decrease ix high byte counter
 			jp	YM_Flush			; 10	; loop back...
 
 YMF_Finish02:
@@ -383,14 +383,14 @@ Z80_DelayEnd2:	ld	b,00Ch				; 07	; delay a little longer...
 YMF_Enter01:	djnz	*				; 13 08	; ''
 
 			exx					; 04	; switch registers
-			dec	ixl				; 08	; decrease ix low byte counter
+			zdec	ixl				; 08	; decrease ix low byte counter
 			jp	nz,PCM_NextByte			; 10	; if it hasn't finished, branch
 
 	; --- Advance/Wrap OUT buffers ---
 
 			M_Wrap
 
-			dec	ixh				; 08	; decrease ix high byte counter
+			zdec	ixh				; 08	; decrease ix high byte counter
 			jp	p,PCM_Flush			; 10	; if we're not ready to go back to main loop, branch
 		exx					; 04	; switch registers down again...
 
@@ -404,13 +404,13 @@ YMF_SetBuff1:
 		ld	(hl),0FFh			; 10	; set end marker at beginning of list
 
 		ld	a,(PCM1_VolTimer+001h)		; 13	; load timer
-		dec	a				; 07	; decrease timer
+		zdec	a				; 07	; decrease timer
 		jp	m,VB_PCM1_VolOK			; 10	; if it was at 0, branch
 		ld	(PCM1_VolTimer+001h),a		; 13	; update timer
 
 VB_PCM1_VolOK:
 		ld	a,(PCM2_VolTimer+001h)		; 13	; load timer
-		dec	a				; 07	; decrease timer
+		zdec	a				; 07	; decrease timer
 		jp	m,VB_PCM2_VolOK			; 10	; if it was at 0, branch
 		ld	(PCM2_VolTimer+001h),a		; 13	; update timer
 
@@ -519,7 +519,7 @@ Z80_Int2:	;ei
 
 PCM1_MuteRet:
 		ld	hl,06001h			; 10	; load bank switch register port
-		dec	iyl				; 08	; set bank interrupt
+		zdec	iyl				; 08	; set bank interrupt
 Int1_nop:	znop					; 04	; CANNOT CHANGE "ld  (hl),h" since it's altered by Z80 elsewhere
 PCM1_Switch:	ld	(hl),h				; 07	; 0000 0000 1  32KB -  64KB (  8000 -   10000)
 		ld	(hl),h				; 07	; 0000 0001 0  64KB - 128KB ( 10000 -   20000)
@@ -609,7 +609,7 @@ PCM1_PreInst16:	M_Read
 PCM1_PreInst17:	M_Read
 PCM1_PreInst18:	M_Read
 		ld	sp,Z80_Stack			; 10	; set valid stack
-		dec	iyl				; 08	; set non-read interrupt
+		zdec	iyl				; 08	; set non-read interrupt
 		ld	(UPD1_Buffer+001h),de		; 20	; update IN buffer address
 			exx					; 04	; switch registers
 			ex	af,af				; 04	; store dividend
@@ -625,7 +625,7 @@ PCM1_PreInst18:	M_Read
 
 PCM2_MuteRet:
 		ld	hl,06001h			; 10	; load bank switch register port
-		dec	iyl				; 08	; set bank interrupt
+		zdec	iyl				; 08	; set bank interrupt
 Int2_nop:	znop					; 04	; CANNOT CHANGE "ld  (hl),h" since it's altered by Z80 elsewhere
 PCM2_Switch:	ld	(hl),h				; 07	; 0000 0000 1  32KB -  64KB (  8000 -   10000)
 		ld	(hl),h				; 07	; 0000 0001 0  64KB - 128KB ( 10000 -   20000)
@@ -720,7 +720,7 @@ PCM2_PreInst18:	ldi					; 16	; copy from window to buffer, and increment registe
 		zadd	a,b				; 04	; add dividend
 		adc	hl,sp				; 15	; add quotient
 		ld	sp,Z80_Stack			; 10	; set valid stack
-		dec	iyl				; 08	; set non-read interrupt
+		zdec	iyl				; 08	; set non-read interrupt
 		ld	(PCM2_Buffer+001h),de		; 20	; update IN buffer address
 		ld	(PCM2_SampCur+001h),hl		; 16	; update sample address
 		ld	(PCM2_PitchCur+001h),a		; 13	; update pitch fraction
@@ -794,7 +794,7 @@ PCM1_ChangePitch:jp	c,PCM1_IgnorePitch		; 10	; if the 68k hasn't requested pitch
 
 		ld	h,(PCM_OverflwCalc>>008h)&0FFh	; 07	; load overflow multiplication table
 PCM1_PitchHigh:	ld	a,001h				; 07	; load upper byte pitch
-		dec	a				; 04	; convert for "ldi" on read set (ldi auto increments hl by 1)
+		zdec	a				; 04	; convert for "ldi" on read set (ldi auto increments hl by 1)
 		ld	c,a				; 04	; save lower byte
 		zadd	a,a				; 04	; sign extend to word
 		sbc	a,a				; 04	; ''
@@ -808,13 +808,13 @@ PCM1_PitchLow:	ld	a,000h				; 07	; load lower byte pitch
 		ld	(PCM1_OverflwDiv+001h),a	; 13	; save overflow fraction
 		inc	h				; 04	; advance to carry values
 		ld	a,(hl)				; 07	; load read fraction carry
-		dec	h				; 04	; go back to multiply values
+		zdec	h				; 04	; go back to multiply values
 		ld	l,c				; 04	; multiply lower byte and add with carry values
 		zadd	a,(hl)				; 07	; ''
 		ld	(PCM1_OverflwCur+001h),a	; 13	; save overflow quotient (low byte)
 		inc	h				; 04	; advance to carry values
 		ld	a,(hl)				; 07	; load read quotient carry
-		dec	h				; 04	; go back to multiply values
+		zdec	h				; 04	; go back to multiply values
 		ld	l,b				; 04	; multiply upper byte and add with carry values
 		adc	a,(hl)				; 07	; ''
 		ld	(PCM1_OverflwCur+002h),a	; 13	; save overflow quotient (high byte)
@@ -828,7 +828,7 @@ PCM2_ChangePitch:jp	c,PCM2_IgnorePitch		; 10	; if the 68k hasn't requested pitch
 
 		ld	h,(PCM_OverflwCalc>>008h)&0FFh	; 07	; load overflow multiplication table
 PCM2_PitchHigh:	ld	a,001h				; 07	; load upper byte pitch
-		dec	a				; 04	; convert for "ldi" on read set (ldi auto increments hl by 1)
+		zdec	a				; 04	; convert for "ldi" on read set (ldi auto increments hl by 1)
 		ld	c,a				; 04	; save lower byte
 		zadd	a,a				; 04	; sign extend to word
 		sbc	a,a				; 04	; ''
@@ -842,13 +842,13 @@ PCM2_PitchLow:	ld	a,000h				; 07	; load lower byte pitch
 		ld	(PCM2_OverflwDiv+001h),a	; 13	; save overflow fraction
 		inc	h				; 04	; advance to carry values
 		ld	a,(hl)				; 07	; load read fraction carry
-		dec	h				; 04	; go back to multiply values
+		zdec	h				; 04	; go back to multiply values
 		ld	l,c				; 04	; multiply lower byte and add with carry values
 		zadd	a,(hl)				; 07	; ''
 		ld	(PCM2_OverflwCur+001h),a	; 13	; save overflow quotient (low byte)
 		inc	h				; 04	; advance to carry values
 		ld	a,(hl)				; 07	; load read quotient carry
-		dec	h				; 04	; go back to multiply values
+		zdec	h				; 04	; go back to multiply values
 		ld	l,b				; 04	; multiply upper byte and add with carry values
 		adc	a,(hl)				; 07	; ''
 		ld	(PCM2_OverflwCur+002h),a	; 13	; save overflow quotient (high byte)
@@ -931,7 +931,7 @@ Z80_Flush2:	ld	b,00Ch
 		djnz	*
 			exx					; 04	; switch registers
 
-			dec	ixl				; 08	; decrease ix low byte counter
+			zdec	ixl				; 08	; decrease ix low byte counter
 			jp	nz,FL_NextByte			; 10	; if it hasn't finished, branch
 
 	; --- Advance/Wrap OUT buffers ---
@@ -945,7 +945,7 @@ Z80_Flush2:	ld	b,00Ch
 ; ---------------------------------------------------------------------------
 
 PCM1_Mute:
-		dec	iyl				; 08	; set non-read interrupt
+		zdec	iyl				; 08	; set non-read interrupt
 		ld	a,(PCM1_PitchQuo+001h)		; 13	; load quotient
 		inc	a				; 04	; increase by 1 (because FF00 is stopped), is it playing normally?
 		jp	p,PCM1_Normal			; 10	; if so, branch
@@ -1024,7 +1024,7 @@ PCM1_ValueAdd:	ld	de,00000h			; 10	; load to de
 
 		ld	sp,Z80_Stack			; 10	; set valid stack
 
-		dec	iyl				; 08	; set non-read interrupt
+		zdec	iyl				; 08	; set non-read interrupt
 
 		ld	a,011010010b			; 07	; set bank change request flag
 		ld	(PCM1_ChangeBank),a		; 13	; ''
@@ -1038,7 +1038,7 @@ PCM1_ValueAdd:	ld	de,00000h			; 10	; load to de
 		zadd	a,(hl)				; 07	; increment/decrement the bank address
 
 		ld	hl,06001h			; 10	; load bank switch register port
-		dec	iyl				; 08	; set bank interrupt
+		zdec	iyl				; 08	; set bank interrupt
 Int1_ldhl:	ld	(hl),a				; 07	; 0000 0000 1  32KB -  64KB (  8000 -   10000)
 		rrca					; 04
 		ld	(hl),a				; 07	; 0000 0001 0  64KB - 128KB ( 10000 -   20000)
@@ -1106,7 +1106,7 @@ PCM1_NewReverse:
 ; ---------------------------------------------------------------------------
 
 PCM2_Mute:
-		dec	iyl				; 08	; set non-read interrupt
+		zdec	iyl				; 08	; set non-read interrupt
 		ld	a,(PCM2_PitchQuo+001h)		; 13	; load quotient
 		inc	a				; 04	; increase by 1 (because FF00 is stopped), is it playing normally?
 		jp	p,PCM2_Normal			; 10	; if so, branch
@@ -1182,7 +1182,7 @@ PCM2_ValueAdd:	ld	de,00000h			; 10	; load to de
 
 		ld	sp,Z80_Stack			; 10	; set valid stack
 
-		dec	iyl				; 08	; set non-read interrupt
+		zdec	iyl				; 08	; set non-read interrupt
 
 		ld	a,011010010b			; 07	; set bank change request flag
 		ld	(PCM2_ChangeBank),a		; 13	; ''
@@ -1196,7 +1196,7 @@ PCM2_ValueAdd:	ld	de,00000h			; 10	; load to de
 		zadd	a,(hl)				; 07	; increment/decrement the bank address
 
 		ld	hl,06001h			; 10	; load bank switch register port
-		dec	iyl				; 08	; set bank interrupt
+		zdec	iyl				; 08	; set bank interrupt
 Int2_ldhl:	ld	(hl),a				; 07	; 0000 0000 1  32KB -  64KB (  8000 -   10000)
 		rrca					; 04
 		ld	(hl),a				; 07	; 0000 0001 0  64KB - 128KB ( 10000 -   20000)
@@ -1562,7 +1562,7 @@ SV_VolumeBank:	ld	(hl),h				; 07	; set 68k address where PCM volume tables are
 		ld	(hl),h				; 07	; ''
 		ld	(hl),h				; 07	; ''
 		ld	(hl),h				; 07	; ''
-		dec	b				; 04	; check the volume timer
+		zdec	b				; 04	; check the volume timer
 		inc	b				; 04	; ''
 		jp	z,SV_Flush			; 10	; if the channel can flush while volume changing, branch
 
@@ -1579,7 +1579,7 @@ SV_VolumeBank:	ld	(hl),h				; 07	; set 68k address where PCM volume tables are
 
 SV_NoMute:
 		ld	h,a				; 04	; set address
-		dec	l				; 04	; clear l (fastest way)
+		zdec	l				; 04	; clear l (fastest way)
 		ld	bc,02100h			; 10	; prepare counter (using 11 since ldi will decrement the b the first time)
 
 SV_LoadVolume:
@@ -1606,7 +1606,7 @@ SV_Flush:
 
 SVF_NoMute:
 		ld	h,a				; 04	; set address
-		dec	l				; 04	; clear l (fastest way)
+		zdec	l				; 04	; clear l (fastest way)
 		ld	bc,00900h			; 10	; prepare counter (using 11 since ldi will decrement the b the first time)
 
 SVF_LoadVolume:
@@ -1629,7 +1629,7 @@ SVF_StartVolume:
 			M_Wrap
 			exx					; 04	; switch registers
 		ld	b,08h				; 07	; reset counter
-		dec	e				; 04	; check volume table counter
+		zdec	e				; 04	; check volume table counter
 		inc	e				; 04	; ''
 		jp	nz,SVF_LoadVolume		; 10	; if not finished, branch
 		ld	a,004h				; 07	; set timer for PCM volume changing

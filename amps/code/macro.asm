@@ -8,7 +8,7 @@
 ; if Vladik's error debugger is installed, then the error will be displayed.
 ; else, the CPU is trapped.
 
-safe =	DEBUG
+safe =	0
 
 ; Select the tempo algorith.
 ; 0 = Overflow method.

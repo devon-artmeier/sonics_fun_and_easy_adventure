@@ -1,38 +1,32 @@
 
-; -------------------------------------------------------------------------
-; Sonic's Fun And Easy Adventure
-; By Ralakimus/Novedicus 2017
-; -------------------------------------------------------------------------
-; Vladikcomper's debugger
-; -------------------------------------------------------------------------
+; ===============================================================
+; ---------------------------------------------------------------
+; MD Debugger and Error Handler v.2.6
+;
+;
+; Documentation, references and source code are available at:
+; - https://github.com/vladikcomper/md-modules
+;
+; (c) 2016-2024, Vladikcomper
+; ---------------------------------------------------------------
+; Debugger and Error handler blob
+; ---------------------------------------------------------------
 
-	if DEBUG
 
-; -------------------------------------------------------------------------
-; Error handler control flags
-; -------------------------------------------------------------------------
+; ---------------------------------------------------------------
+; Exception vectors
+; ---------------------------------------------------------------
 
-; Screen appearence flags
-_eh_address_error	equ	$01	; use for address and bus errors only (tells error handler to display additional "Address" field)
-_eh_show_sr_usp		equ	$02	; displays SR and USP registers content on error screen
+	if DEBUGGER__SHOW_SR_USP
+_eh_default:	equ	_eh_show_sr_usp
+	else
+_eh_default:	equ	0
+	endif
 
-; Advanced execution flags
-; WARNING! For experts only, DO NOT USES them unless you know what you're doing
-_eh_return		equ	$20
-_eh_enter_console	equ	$40
-_eh_align_offset	equ	$80
+; ---------------------------------------------------------------
 
-; -------------------------------------------------------------------------
-; Errors vector table
-; -------------------------------------------------------------------------
-
-; Default screen configuration
-_eh_default		equ	0	;_eh_show_sr_usp
-
-; -------------------------------------------------------------------------
-
-Exception:
-	__ErrorMessage "UNEXPECTED ERROR", _eh_default
+BusError:
+	__ErrorMessage "BUS ERROR", _eh_default|_eh_address_error
 
 AddressError:
 	__ErrorMessage "ADDRESS ERROR", _eh_default|_eh_address_error
@@ -43,162 +37,216 @@ IllegalInstr:
 DivideByZero:
 	__ErrorMessage "ZERO DIVIDE", _eh_default
 
-; -------------------------------------------------------------------------
-; Import error handler global functions
-; -------------------------------------------------------------------------
+ChkInstr:
+	__ErrorMessage "CHK INSTRUCTION", _eh_default
 
-ErrorHandler.__global__error_initconsole		equ	ErrorHandler+$146
-ErrorHandler.__global__errorhandler_setupvdp		equ	ErrorHandler+$234
-ErrorHandler.__global__console_loadpalette		equ	ErrorHandler+$A1C
-ErrorHandler.__global__console_setposasxy_stack		equ	ErrorHandler+$A58
-ErrorHandler.__global__console_setposasxy		equ	ErrorHandler+$A5E
-ErrorHandler.__global__console_getposasxy		equ	ErrorHandler+$A8A
-ErrorHandler.__global__console_startnewline		equ	ErrorHandler+$AAC
-ErrorHandler.__global__console_setbasepattern		equ	ErrorHandler+$AD4
-ErrorHandler.__global__console_setwidth			equ	ErrorHandler+$AE8
-ErrorHandler.__global__console_writeline_withpattern	equ	ErrorHandler+$AFE
-ErrorHandler.__global__console_writeline		equ	ErrorHandler+$B00
-ErrorHandler.__global__console_write			equ	ErrorHandler+$B04
-ErrorHandler.__global__console_writeline_formatted	equ	ErrorHandler+$BB0
-ErrorHandler.__global__console_write_formatted		equ	ErrorHandler+$BB4
+TrapvInstr:
+	__ErrorMessage "TRAPV INSTRUCTION", _eh_default
 
-; -------------------------------------------------------------------------
-; Error handler external functions (compiled only when used)
-; -------------------------------------------------------------------------
+PrivilegeViol:
+	__ErrorMessage "PRIVILEGE VIOLATION", _eh_default
 
-	if ref(ErrorHandler.__extern_scrollconsole)
-ErrorHandler.__extern__scrollconsole:
+Trace:
+	__ErrorMessage "TRACE", _eh_default
 
-	endif
+Line1010Emu:
+	__ErrorMessage "LINE 1010 EMULATOR", _eh_default
 
-	if ref(ErrorHandler.__extern__console_only)
-ErrorHandler.__extern__console_only:
-	dc.l	$46FC2700, $4FEFFFF2, $48E7FFFE, $47EF003C
-	jsr		ErrorHandler.__global__errorhandler_setupvdp(pc)
-	jsr		ErrorHandler.__global__error_initconsole(pc)
-	dc.l	$4CDF7FFF, $487A0008, $2F2F0012, $4E7560FE
-	endif
+Line1111Emu:
+	__ErrorMessage "LINE 1111 EMULATOR", _eh_default
 
-	if ref(ErrorHandler.__extern__vsync)
-ErrorHandler.__extern__vsync:
-	dc.l	$41F900C0, $000444D0, $6BFC44D0, $6AFC4E75
-	endif
+Exception:
+	__ErrorMessage "ERROR EXCEPTION", _eh_default
 
-; -------------------------------------------------------------------------
-; Include error handler binary module
-; -------------------------------------------------------------------------
+
+; ---------------------------------------------------------------
+; MD Debugger blob
+; ---------------------------------------------------------------
 
 ErrorHandler:
-	dc.b	$46,$FC,$27,$00,$4F,$EF,$FF,$F2,$48,$E7,$FF,$FE,$4E,$BA,$02,$26,$49,$EF,$00,$4A,$4E,$68,$2F,$08,$47,$EF,$00,$40,$4E,$BA,$01,$28
-	dc.b	$41,$FA,$02,$AA,$4E,$BA,$0A,$DE,$22,$5C,$45,$D4,$4E,$BA,$0B,$82,$4E,$BA,$0A,$7A,$49,$D2,$1C,$19,$6A,$02,$52,$49,$47,$D1,$08,$06
-	dc.b	$00,$00,$67,$0E,$43,$FA,$02,$8D,$45,$EC,$00,$02,$4E,$BA,$0B,$62,$50,$4C,$43,$FA,$02,$8E,$45,$EC,$00,$02,$4E,$BA,$0B,$54,$43,$FA
-	dc.b	$02,$90,$45,$EC,$00,$02,$4E,$BA,$0B,$48,$45,$EC,$00,$06,$4E,$BA,$01,$A6,$43,$FA,$02,$8A,$2F,$01,$45,$D7,$4E,$BA,$0B,$34,$4E,$BA
-	dc.b	$0A,$2C,$58,$4F,$08,$06,$00,$06,$66,$00,$00,$A6,$45,$EF,$00,$04,$4E,$BA,$09,$F8,$3F,$01,$70,$03,$4E,$BA,$09,$C4,$30,$3C,$64,$30
-	dc.b	$7A,$07,$4E,$BA,$01,$04,$32,$1F,$70,$11,$4E,$BA,$09,$B2,$30,$3C,$61,$30,$7A,$06,$4E,$BA,$00,$F2,$30,$3C,$73,$70,$7A,$00,$2F,$0C
-	dc.b	$45,$D7,$4E,$BA,$00,$E4,$58,$4F,$08,$06,$00,$01,$67,$14,$43,$FA,$02,$3C,$45,$D7,$4E,$BA,$0A,$DE,$43,$FA,$02,$3D,$45,$D4,$4E,$BA
-	dc.b	$0A,$D0,$58,$4F,$4E,$BA,$09,$A4,$52,$41,$70,$01,$4E,$BA,$09,$70,$20,$38,$00,$78,$41,$FA,$02,$2B,$4E,$BA,$00,$DC,$20,$38,$00,$70
-	dc.b	$41,$FA,$02,$27,$4E,$BA,$00,$D0,$4E,$BA,$09,$A2,$34,$4C,$43,$F8,$00,$00,$53,$49,$4E,$BA,$09,$74,$7A,$19,$9A,$41,$6B,$0A,$61,$32
-	dc.b	$4E,$BA,$00,$44,$51,$CD,$FF,$FA,$08,$06,$00,$05,$66,$08,$60,$FE,$72,$00,$4E,$BA,$09,$A0,$2E,$CB,$4C,$DF,$7F,$FF,$48,$7A,$FF,$F0
-	dc.b	$2F,$2F,$FF,$C4,$4E,$75,$43,$FA,$01,$40,$45,$FA,$01,$E6,$4E,$FA,$08,$88,$4F,$EF,$FF,$D0,$41,$D7,$7E,$FF,$20,$FC,$28,$53,$50,$29
-	dc.b	$30,$FC,$3A,$20,$60,$18,$4F,$EF,$FF,$D0,$41,$D7,$7E,$FF,$30,$FC,$20,$2B,$32,$0A,$92,$4C,$4E,$BA,$05,$AA,$30,$FC,$3A,$20,$70,$05
-	dc.b	$72,$EC,$B4,$C9,$6D,$02,$72,$EE,$10,$C1,$32,$1A,$4E,$BA,$05,$BC,$10,$FC,$00,$20,$51,$C8,$FF,$EA,$42,$18,$41,$D7,$72,$00,$4E,$BA
-	dc.b	$09,$5E,$4F,$EF,$00,$30,$4E,$75,$4F,$EF,$FF,$F0,$7E,$FF,$41,$D7,$30,$C0,$30,$FC,$3A,$20,$10,$FC,$00,$EC,$22,$1A,$4E,$BA,$05,$84
-	dc.b	$42,$18,$41,$D7,$72,$00,$4E,$BA,$09,$36,$52,$40,$51,$CD,$FF,$E0,$4F,$EF,$00,$10,$4E,$75,$22,$00,$48,$41,$46,$01,$66,$20,$51,$4F
-	dc.b	$2E,$88,$24,$40,$43,$FA,$00,$21,$0C,$5A,$4E,$F9,$66,$08,$43,$FA,$00,$10,$2F,$52,$00,$04,$45,$D7,$4E,$BA,$09,$BA,$50,$4F,$4E,$75
-	dc.b	$D0,$E8,$BF,$EC,$C8,$E0,$00,$D0,$E8,$3C,$75,$6E,$64,$65,$66,$69,$6E,$65,$64,$3E,$E0,$00,$43,$F8,$00,$00,$59,$49,$B2,$CA,$65,$0C
-	dc.b	$0C,$52,$00,$40,$65,$0A,$54,$4A,$B2,$CA,$64,$F4,$72,$00,$4E,$75,$22,$12,$4E,$75,$4B,$F9,$00,$C0,$00,$04,$4D,$ED,$FF,$FC,$4A,$55
-	dc.b	$44,$D5,$69,$FC,$41,$FA,$00,$26,$30,$18,$6A,$04,$3A,$80,$60,$F8,$70,$00,$2A,$BC,$40,$00,$00,$00,$2C,$80,$2A,$BC,$40,$00,$00,$10
-	dc.b	$2C,$80,$2A,$BC,$C0,$00,$00,$00,$3C,$80,$4E,$75,$80,$04,$81,$34,$82,$20,$84,$04,$85,$00,$87,$00,$8B,$00,$8C,$81,$8D,$00,$8F,$02
-	dc.b	$90,$11,$91,$00,$92,$00,$00,$00,$44,$00,$00,$00,$00,$00,$00,$01,$00,$10,$00,$11,$01,$00,$01,$01,$01,$10,$01,$11,$10,$00,$10,$01
-	dc.b	$10,$10,$10,$11,$11,$00,$11,$01,$11,$10,$11,$11,$FF,$FF,$40,$00,$00,$02,$00,$28,$00,$28,$00,$00,$00,$80,$00,$FF,$0E,$EE,$FF,$F2
-	dc.b	$00,$CE,$FF,$F2,$0E,$EA,$FF,$F2,$0E,$86,$FF,$F2,$EA,$E0,$FA,$01,$F0,$26,$00,$EA,$41,$64,$64,$72,$65,$73,$73,$3A,$20,$E8,$BB,$EC
-	dc.b	$C0,$00,$EA,$4C,$6F,$63,$61,$74,$69,$6F,$6E,$3A,$20,$EC,$83,$00,$EA,$4D,$6F,$64,$75,$6C,$65,$3A,$20,$E8,$BF,$EC,$C8,$00,$EA,$43
-	dc.b	$61,$6C,$6C,$65,$72,$3A,$20,$E8,$BB,$EC,$C0,$00,$FA,$10,$E8,$75,$73,$70,$3A,$20,$EC,$83,$00,$FA,$03,$E8,$73,$72,$3A,$20,$EC,$81
-	dc.b	$00,$EA,$56,$49,$6E,$74,$3A,$20,$00,$EA,$48,$49,$6E,$74,$3A,$20,$00,$00,$02,$F9,$00,$00,$00,$00,$00,$00,$00,$00,$18,$3C,$3C,$18
-	dc.b	$18,$00,$18,$00,$6C,$6C,$6C,$00,$00,$00,$00,$00,$6C,$6C,$FE,$6C,$FE,$6C,$6C,$00,$18,$7E,$C0,$7C,$06,$FC,$18,$00,$00,$C6,$0C,$18
-	dc.b	$30,$60,$C6,$00,$38,$6C,$38,$76,$CC,$CC,$76,$00,$18,$18,$30,$00,$00,$00,$00,$00,$18,$30,$60,$60,$60,$30,$18,$00,$60,$30,$18,$18
-	dc.b	$18,$30,$60,$00,$00,$EE,$7C,$FE,$7C,$EE,$00,$00,$00,$18,$18,$7E,$18,$18,$00,$00,$00,$00,$00,$00,$18,$18,$30,$00,$00,$00,$00,$FE
-	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$38,$38,$00,$06,$0C,$18,$30,$60,$C0,$80,$00,$7C,$C6,$CE,$DE,$F6,$E6,$7C,$00,$18,$78,$18,$18
-	dc.b	$18,$18,$7E,$00,$7C,$C6,$0C,$18,$30,$66,$FE,$00,$7C,$C6,$06,$3C,$06,$C6,$7C,$00,$0C,$1C,$3C,$6C,$FE,$0C,$0C,$00,$FE,$C0,$FC,$06
-	dc.b	$06,$C6,$7C,$00,$7C,$C6,$C0,$FC,$C6,$C6,$7C,$00,$FE,$C6,$06,$0C,$18,$18,$18,$00,$7C,$C6,$C6,$7C,$C6,$C6,$7C,$00,$7C,$C6,$C6,$7E
-	dc.b	$06,$C6,$7C,$00,$00,$1C,$1C,$00,$00,$1C,$1C,$00,$00,$18,$18,$00,$00,$18,$18,$30,$0C,$18,$30,$60,$30,$18,$0C,$00,$00,$00,$FE,$00
-	dc.b	$00,$FE,$00,$00,$60,$30,$18,$0C,$18,$30,$60,$00,$7C,$C6,$06,$0C,$18,$00,$18,$00,$7C,$C6,$C6,$DE,$DC,$C0,$7E,$00,$38,$6C,$C6,$C6
-	dc.b	$FE,$C6,$C6,$00,$FC,$66,$66,$7C,$66,$66,$FC,$00,$3C,$66,$C0,$C0,$C0,$66,$3C,$00,$F8,$6C,$66,$66,$66,$6C,$F8,$00,$FE,$C2,$C0,$F8
-	dc.b	$C0,$C2,$FE,$00,$FE,$62,$60,$7C,$60,$60,$F0,$00,$7C,$C6,$C0,$C0,$DE,$C6,$7C,$00,$C6,$C6,$C6,$FE,$C6,$C6,$C6,$00,$3C,$18,$18,$18
-	dc.b	$18,$18,$3C,$00,$3C,$18,$18,$18,$D8,$D8,$70,$00,$C6,$CC,$D8,$F0,$D8,$CC,$C6,$00,$F0,$60,$60,$60,$60,$62,$FE,$00,$C6,$EE,$FE,$D6
-	dc.b	$D6,$C6,$C6,$00,$C6,$E6,$E6,$F6,$DE,$CE,$C6,$00,$7C,$C6,$C6,$C6,$C6,$C6,$7C,$00,$FC,$66,$66,$7C,$60,$60,$F0,$00,$7C,$C6,$C6,$C6
-	dc.b	$C6,$D6,$7C,$06,$FC,$C6,$C6,$FC,$D8,$CC,$C6,$00,$7C,$C6,$C0,$7C,$06,$C6,$7C,$00,$7E,$5A,$18,$18,$18,$18,$3C,$00,$C6,$C6,$C6,$C6
-	dc.b	$C6,$C6,$7C,$00,$C6,$C6,$C6,$C6,$6C,$38,$10,$00,$C6,$C6,$D6,$D6,$FE,$EE,$C6,$00,$C6,$6C,$38,$38,$38,$6C,$C6,$00,$66,$66,$66,$3C
-	dc.b	$18,$18,$3C,$00,$FE,$86,$0C,$18,$30,$62,$FE,$00,$7C,$60,$60,$60,$60,$60,$7C,$00,$C0,$60,$30,$18,$0C,$06,$02,$00,$7C,$0C,$0C,$0C
-	dc.b	$0C,$0C,$7C,$00,$10,$38,$6C,$C6,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$30,$30,$18,$00,$00,$00,$00,$00,$00,$00,$78,$0C
-	dc.b	$7C,$CC,$7E,$00,$E0,$60,$7C,$66,$66,$66,$FC,$00,$00,$00,$7C,$C6,$C0,$C6,$7C,$00,$1C,$0C,$7C,$CC,$CC,$CC,$7E,$00,$00,$00,$7C,$C6
-	dc.b	$FE,$C0,$7C,$00,$1C,$36,$30,$FC,$30,$30,$78,$00,$00,$00,$76,$CE,$C6,$7E,$06,$7C,$E0,$60,$7C,$66,$66,$66,$E6,$00,$18,$00,$38,$18
-	dc.b	$18,$18,$3C,$00,$0C,$00,$1C,$0C,$0C,$0C,$CC,$78,$E0,$60,$66,$6C,$78,$6C,$E6,$00,$18,$18,$18,$18,$18,$18,$1C,$00,$00,$00,$6C,$FE
-	dc.b	$D6,$D6,$C6,$00,$00,$00,$DC,$66,$66,$66,$66,$00,$00,$00,$7C,$C6,$C6,$C6,$7C,$00,$00,$00,$DC,$66,$66,$7C,$60,$F0,$00,$00,$76,$CC
-	dc.b	$CC,$7C,$0C,$1E,$00,$00,$DC,$66,$60,$60,$F0,$00,$00,$00,$7C,$C0,$7C,$06,$7C,$00,$30,$30,$FC,$30,$30,$36,$1C,$00,$00,$00,$CC,$CC
-	dc.b	$CC,$CC,$76,$00,$00,$00,$C6,$C6,$6C,$38,$10,$00,$00,$00,$C6,$C6,$D6,$FE,$6C,$00,$00,$00,$C6,$6C,$38,$6C,$C6,$00,$00,$00,$C6,$C6
-	dc.b	$CE,$76,$06,$7C,$00,$00,$FC,$98,$30,$64,$FC,$00,$0E,$18,$18,$70,$18,$18,$0E,$00,$18,$18,$18,$00,$18,$18,$18,$00,$70,$18,$18,$0E
-	dc.b	$18,$18,$70,$00,$76,$DC,$00,$00,$00,$00,$00,$00,$43,$FA,$05,$D2,$0C,$59,$DE,$B2,$66,$70,$70,$FE,$D0,$59,$74,$FC,$76,$00,$48,$41
-	dc.b	$48,$81,$D2,$41,$D2,$41,$B2,$40,$62,$5C,$67,$5E,$20,$31,$10,$00,$67,$58,$47,$F1,$08,$00,$48,$41,$70,$00,$30,$1B,$B2,$53,$65,$4C
-	dc.b	$43,$F3,$08,$FE,$45,$E9,$FF,$FC,$E2,$48,$C0,$42,$B2,$73,$00,$00,$65,$14,$62,$04,$D6,$C0,$60,$1A,$47,$F3,$00,$04,$20,$0A,$90,$8B
-	dc.b	$6A,$E6,$59,$4B,$60,$0C,$45,$F3,$00,$FC,$20,$0A,$90,$8B,$6A,$D8,$47,$D2,$92,$5B,$74,$00,$34,$1B,$D3,$C2,$48,$41,$42,$41,$48,$41
-	dc.b	$D2,$83,$70,$00,$4E,$75,$70,$FF,$4E,$75,$48,$41,$70,$00,$30,$01,$D6,$80,$52,$83,$32,$3C,$FF,$FF,$48,$41,$59,$41,$6A,$8E,$70,$FF
-	dc.b	$4E,$75,$47,$FA,$05,$3C,$0C,$5B,$DE,$B2,$66,$4A,$D6,$D3,$78,$00,$72,$00,$74,$00,$45,$D3,$51,$CC,$00,$06,$16,$19,$78,$07,$D6,$03
-	dc.b	$D3,$41,$52,$42,$B2,$52,$62,$0A,$65,$EC,$B4,$2A,$00,$02,$67,$12,$65,$E4,$58,$4A,$B2,$52,$62,$FA,$65,$DC,$B4,$2A,$00,$02,$65,$D6
-	dc.b	$66,$F0,$10,$EA,$00,$03,$67,$0A,$51,$CF,$FF,$C6,$4E,$94,$64,$C0,$4E,$75,$53,$48,$4E,$75,$70,$00,$4E,$75,$4E,$FA,$00,$2E,$4E,$FA
-	dc.b	$00,$22,$76,$0F,$34,$01,$E8,$4A,$C4,$43,$10,$FB,$20,$6A,$51,$CF,$00,$06,$4E,$94,$65,$5E,$C2,$43,$10,$FB,$10,$5C,$51,$CF,$00,$56
-	dc.b	$4E,$D4,$48,$41,$61,$04,$65,$4C,$48,$41,$74,$04,$76,$0F,$E5,$79,$18,$01,$C8,$43,$10,$FB,$40,$40,$51,$CF,$00,$04,$4E,$94,$65,$34
-	dc.b	$E5,$79,$18,$01,$C8,$43,$10,$FB,$40,$2E,$51,$CF,$00,$04,$4E,$94,$65,$22,$E5,$79,$18,$01,$C8,$43,$10,$FB,$40,$1C,$51,$CF,$00,$04
-	dc.b	$4E,$94,$65,$10,$E5,$79,$18,$01,$C8,$43,$10,$FB,$40,$0A,$51,$CF,$00,$04,$4E,$D4,$4E,$75,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39
-	dc.b	$41,$42,$43,$44,$45,$46,$4E,$FA,$00,$26,$4E,$FA,$00,$1A,$74,$07,$70,$18,$D2,$01,$D1,$00,$10,$C0,$51,$CF,$00,$06,$4E,$94,$65,$04
-	dc.b	$51,$CA,$FF,$EE,$4E,$75,$48,$41,$61,$04,$65,$18,$48,$41,$74,$0F,$70,$18,$D2,$41,$D1,$00,$10,$C0,$51,$CF,$00,$06,$4E,$94,$65,$04
-	dc.b	$51,$CA,$FF,$EE,$4E,$75,$4E,$FA,$00,$10,$4E,$FA,$00,$48,$47,$FA,$00,$9A,$02,$41,$00,$FF,$60,$04,$47,$FA,$00,$8C,$42,$00,$76,$09
-	dc.b	$38,$1B,$34,$03,$92,$44,$55,$CA,$FF,$FC,$D2,$44,$94,$43,$44,$42,$80,$02,$67,$0E,$06,$02,$00,$30,$10,$C2,$51,$CF,$00,$06,$4E,$94
-	dc.b	$65,$10,$38,$1B,$6A,$DC,$06,$01,$00,$30,$10,$C1,$51,$CF,$00,$04,$4E,$D4,$4E,$75,$47,$FA,$00,$2E,$42,$00,$76,$09,$28,$1B,$34,$03
-	dc.b	$92,$84,$55,$CA,$FF,$FC,$D2,$84,$94,$43,$44,$42,$80,$02,$67,$0E,$06,$02,$00,$30,$10,$C2,$51,$CF,$00,$06,$4E,$94,$65,$D4,$28,$1B
-	dc.b	$6A,$DC,$60,$9E,$3B,$9A,$CA,$00,$05,$F5,$E1,$00,$00,$98,$96,$80,$00,$0F,$42,$40,$00,$01,$86,$A0,$00,$00,$27,$10,$FF,$FF,$03,$E8
-	dc.b	$00,$64,$00,$0A,$FF,$FF,$27,$10,$03,$E8,$00,$64,$00,$0A,$FF,$FF,$48,$C1,$60,$08,$4E,$FA,$00,$06,$48,$81,$48,$C1,$08,$03,$00,$03
-	dc.b	$66,$04,$48,$7A,$00,$CE,$48,$E7,$50,$60,$4E,$BA,$FD,$80,$66,$0C,$2E,$81,$4E,$BA,$FE,$0E,$4C,$DF,$06,$0A,$4E,$75,$4C,$DF,$06,$0A
-	dc.b	$08,$03,$00,$02,$67,$08,$47,$FA,$00,$0A,$4E,$FA,$00,$B8,$70,$FF,$4E,$75,$3C,$75,$6E,$6B,$6E,$6F,$77,$6E,$3E,$00,$10,$FC,$00,$2B
-	dc.b	$51,$CF,$00,$06,$4E,$94,$65,$D2,$48,$41,$4A,$41,$67,$00,$FE,$5A,$4E,$BA,$FE,$58,$4E,$FA,$FE,$52,$08,$03,$00,$03,$66,$BC,$4E,$FA
-	dc.b	$FE,$42,$48,$E7,$F8,$10,$10,$D9,$5F,$CF,$FF,$FC,$6E,$14,$67,$18,$16,$20,$74,$70,$C4,$03,$4E,$BB,$20,$1A,$64,$EA,$4C,$DF,$08,$1F
-	dc.b	$4E,$75,$4E,$94,$64,$E0,$60,$F4,$53,$48,$4E,$94,$4C,$DF,$08,$1F,$4E,$75,$47,$FA,$FD,$E6,$B7,$02,$D4,$02,$4E,$FB,$20,$5A,$4E,$71
-	dc.b	$4E,$71,$47,$FA,$FE,$A2,$B7,$02,$D4,$02,$4E,$FB,$20,$4A,$4E,$71,$4E,$71,$47,$FA,$FE,$52,$B7,$02,$D4,$02,$4E,$FB,$20,$3A,$53,$48
-	dc.b	$4E,$75,$47,$FA,$FF,$2C,$14,$03,$02,$42,$00,$03,$D4,$42,$4E,$FB,$20,$26,$4A,$40,$6B,$08,$4A,$81,$67,$16,$4E,$FA,$FF,$60,$4E,$FA
-	dc.b	$FF,$78,$26,$5A,$10,$DB,$67,$D6,$51,$CF,$FF,$FA,$4E,$94,$64,$F4,$4E,$75,$52,$48,$60,$3C,$50,$4B,$32,$1A,$4E,$D3,$58,$4B,$22,$1A
-	dc.b	$4E,$D3,$52,$48,$60,$22,$50,$4B,$32,$1A,$60,$04,$58,$4B,$22,$1A,$6A,$0C,$44,$81,$10,$FC,$00,$2D,$53,$47,$65,$D4,$4E,$D3,$10,$FC
-	dc.b	$00,$2B,$53,$47,$65,$CA,$4E,$D3,$51,$CF,$00,$06,$4E,$94,$65,$C0,$10,$D9,$51,$CF,$FF,$BC,$4E,$D4,$4B,$F9,$00,$C0,$00,$04,$4D,$ED
-	dc.b	$FF,$FC,$4A,$51,$6B,$10,$2A,$99,$41,$D2,$38,$18,$4E,$BA,$01,$F6,$43,$E9,$00,$20,$60,$EC,$54,$49,$4E,$63,$2A,$19,$26,$C5,$26,$D9
-	dc.b	$26,$D9,$36,$FC,$5D,$00,$47,$FA,$00,$3A,$2A,$85,$70,$00,$32,$19,$4E,$93,$2A,$BC,$40,$00,$00,$00,$72,$00,$4E,$93,$2A,$BC,$C0,$00
-	dc.b	$00,$00,$70,$00,$76,$03,$3C,$80,$34,$19,$3C,$82,$34,$19,$6A,$FA,$72,$00,$4E,$B3,$20,$10,$51,$CB,$FF,$EE,$3A,$BC,$81,$74,$2A,$85
-	dc.b	$4E,$75,$2C,$80,$2C,$80,$2C,$80,$2C,$80,$2C,$80,$2C,$80,$2C,$80,$2C,$80,$51,$C9,$FF,$EE,$4E,$75,$4C,$AF,$00,$03,$00,$04,$48,$E7
-	dc.b	$60,$10,$4E,$6B,$0C,$2B,$00,$5D,$00,$0C,$66,$18,$34,$13,$02,$42,$E0,$00,$C2,$EB,$00,$0A,$D4,$41,$D4,$40,$D4,$40,$36,$82,$23,$D3
-	dc.b	$00,$C0,$00,$04,$4C,$DF,$08,$06,$4E,$75,$2F,$0B,$4E,$6B,$0C,$2B,$00,$5D,$00,$0C,$66,$12,$72,$00,$32,$13,$02,$41,$1F,$FF,$82,$EB
-	dc.b	$00,$0A,$20,$01,$48,$40,$E2,$48,$26,$5F,$4E,$75,$2F,$0B,$4E,$6B,$0C,$2B,$00,$5D,$00,$0C,$66,$18,$3F,$00,$30,$13,$D0,$6B,$00,$0A
-	dc.b	$02,$40,$5F,$FF,$36,$80,$23,$DB,$00,$C0,$00,$04,$36,$DB,$30,$1F,$26,$5F,$4E,$75,$2F,$0B,$4E,$6B,$0C,$2B,$00,$5D,$00,$0C,$66,$04
-	dc.b	$37,$41,$00,$08,$26,$5F,$4E,$75,$2F,$0B,$4E,$6B,$0C,$2B,$00,$5D,$00,$0C,$66,$06,$58,$4B,$36,$C1,$36,$C1,$26,$5F,$4E,$75,$61,$D4
-	dc.b	$48,$7A,$FF,$AA,$48,$E7,$7E,$12,$4E,$6B,$0C,$2B,$00,$5D,$00,$0C,$66,$1C,$2A,$1B,$4C,$93,$00,$5C,$48,$46,$4D,$F9,$00,$C0,$00,$00
-	dc.b	$72,$00,$12,$18,$6E,$0E,$6B,$28,$48,$93,$00,$1C,$27,$05,$4C,$DF,$48,$7E,$4E,$75,$51,$CB,$00,$0E,$D6,$42,$DA,$86,$08,$85,$00,$1D
-	dc.b	$2D,$45,$00,$04,$D2,$44,$3C,$81,$72,$00,$12,$18,$6E,$E6,$67,$D8,$02,$41,$00,$1E,$4E,$FB,$10,$02,$DA,$86,$72,$1D,$03,$85,$60,$20
-	dc.b	$60,$26,$60,$2A,$60,$32,$60,$3A,$14,$18,$60,$14,$18,$18,$60,$D8,$60,$36,$12,$18,$D2,$41,$76,$80,$48,$43,$CA,$83,$48,$41,$8A,$81
-	dc.b	$36,$02,$2D,$45,$00,$04,$60,$C0,$02,$44,$07,$FF,$60,$BA,$02,$44,$07,$FF,$00,$44,$20,$00,$60,$B0,$02,$44,$07,$FF,$00,$44,$40,$00
-	dc.b	$60,$A6,$00,$44,$60,$00,$60,$A0,$3F,$04,$1E,$98,$38,$1F,$60,$98,$48,$7A,$FE,$FA,$2F,$0C,$49,$FA,$00,$16,$4F,$EF,$FF,$F0,$41,$D7
-	dc.b	$7E,$0E,$4E,$BA,$FD,$3E,$4F,$EF,$00,$10,$28,$5F,$4E,$75,$42,$18,$44,$47,$06,$47,$00,$0F,$90,$C7,$2F,$08,$4E,$BA,$FF,$28,$20,$5F
-	dc.b	$7E,$0E,$4E,$75,$74,$1E,$10,$18,$12,$00,$E6,$09,$C2,$42,$3C,$B1,$10,$00,$D0,$00,$C0,$42,$3C,$B1,$00,$00,$51,$CC,$FF,$EA,$4E,$75
 
-; -------------------------------------------------------------------------
+	dc.l	$46FC2700, $4FEFFFF0, $48E7FFFE, $4EBA0242, $49EF004C, $4E682F08, $47EF0040, $4EBA0124
+	dc.l	$41FA02C4, $4EBA0B6C, $225C45D4, $4EBA0C2A, $4EBA0AF2, $49D21C19, $6A025249, $47D10806
+	dc.l	$0000670E, $41FA02A7, $222C0002, $4EBA016A, $504C41FA, $02A4222C, $00024EBA, $015C0806
+	dc.l	$00026614, $22780000, $45EC0006, $4EBA01BC, $41FA0290, $4EBA0142, $4EBA0AAA, $08060006
+	dc.l	$660000AA, $45EF0004, $4EBA0A74, $3F017003, $4EBA0A38, $303C6430, $7A074EBA, $0132321F
+	dc.l	$70114EBA, $0A26303C, $61307A06, $4EBA0120, $303C7370, $7A002F0C, $45D74EBA, $0112584F
+	dc.l	$08060001, $671443FA, $025545D7, $4EBA0B8E, $43FA0256, $45D44EBA, $0B80584F, $4EBA0A20
+	dc.l	$52417001, $4EBA09E4, $20380078, $41FA0244, $4EBA010A, $20380070, $41FA0240, $4EBA00FE
+	dc.l	$4EBA0A22, $22780000, $45D45389, $61404EBA, $09EE7A19, $9A416B0A, $61484EBA, $005A51CD
+	dc.l	$FFFA0806, $0005660A, $4E7160FC, $72004EBA, $0A222ECB, $4CDF7FFF, $487AFFEE, $2F2FFFC4
+	dc.l	$4E7543FA, $015E45FA, $02084EFA, $08EE223C, $00FFFFFF, $2409C481, $2242240A, $C4812442
+	dc.l	$4E754FEF, $FFD041D7, $7EFF20FC, $28535029, $30FC3A20, $60184FEF, $FFD041D7, $7EFF30FC
+	dc.l	$202B320A, $924C4EBA, $05BA30FC, $3A207005, $72ECB5C9, $650272EE, $10C1321A, $4EBA05C2
+	dc.l	$10FC0020, $51C8FFEA, $421841D7, $72004EBA, $09DC4FEF, $00304E75, $4EBA09D8, $2F012F01
+	dc.l	$45D743FA
+	dc.w	DEBUGGER__STR_OFFSET_SELECTOR-MDDBG__Error_DrawOffsetLocation__inj-2
+	dc.l	$4EBA0A90, $504F4E75, $4FEFFFF0, $7EFF41D7, $30C030FC, $3A2010FC, $00EC221A, $4EBA0574
+	dc.l	$421841D7, $72004EBA, $099E5240, $51CDFFE0, $4FEF0010, $4E752200, $48414601, $66F62440
+	dc.l	$0C5A4EF9, $66042212, $60A80C6A, $4EF8FFFE, $66063212, $48C1609A, $4EBA0972, $41FA011E
+	dc.l	$4EFA0966, $59894EBA, $FF20B3CA, $650C0C52, $0040650A, $548AB3CA, $64F47200, $4E752212
+	dc.l	$67F20801, $000066EC, $4E754BF9, $00C00004, $4DEDFFFC, $44D569FC, $41FA0026, $30186A04
+	dc.l	$3A8060F8, $70002ABC, $40000000, $2C802ABC, $40000010, $2C802ABC, $C0000000, $3C804E75
+	dc.l	$80048134, $85008700, $8B008C81, $8D008F02, $90119100, $92008220, $84040000, $44000000
+	dc.l	$00000001, $00100011, $01000101, $01100111, $10001001, $10101011, $11001101, $11101111
+	dc.l	$FFFF0EEE, $FFF200CE, $FFF20EEA, $FFF20E86, $FFF24000, $00020028, $00280000, $008000FF
+	dc.l	$EAE0FA01, $F02600EA, $41646472, $6573733A, $2000EA4F, $66667365, $743A2000, $EA43616C
+	dc.l	$6C65723A, $2000EC80, $8120E8BF, $ECC800EC, $8320E8BF, $ECC800FA, $10E87573, $703A20EC
+	dc.l	$8300FA03, $E873723A, $20EC8100, $EA56496E, $743A2000, $EA48496E, $743A2000, $E83C756E
+	dc.l	$64656669, $6E65643E, $000002F7, $00000000, $00000000, $183C3C18, $18001800, $6C6C6C00
+	dc.l	$00000000, $6C6CFE6C, $FE6C6C00, $187EC07C, $06FC1800, $00C60C18, $3060C600, $386C3876
+	dc.l	$CCCC7600, $18183000, $00000000, $18306060, $60301800, $60301818, $18306000, $00EE7CFE
+	dc.l	$7CEE0000, $0018187E, $18180000, $00000000, $18183000, $000000FE, $00000000, $00000000
+	dc.l	$00383800, $060C1830, $60C08000, $7CC6CEDE, $F6E67C00, $18781818, $18187E00, $7CC60C18
+	dc.l	$3066FE00, $7CC6063C, $06C67C00, $0C1C3C6C, $FE0C0C00, $FEC0FC06, $06C67C00, $7CC6C0FC
+	dc.l	$C6C67C00, $FEC6060C, $18181800, $7CC6C67C, $C6C67C00, $7CC6C67E, $06C67C00, $001C1C00
+	dc.l	$001C1C00, $00181800, $00181830, $0C183060, $30180C00, $0000FE00, $00FE0000, $6030180C
+	dc.l	$18306000, $7CC6060C, $18001800, $7CC6C6DE, $DCC07E00, $386CC6C6, $FEC6C600, $FC66667C
+	dc.l	$6666FC00, $3C66C0C0, $C0663C00, $F86C6666, $666CF800, $FEC2C0F8, $C0C2FE00, $FE62607C
+	dc.l	$6060F000, $7CC6C0C0, $DEC67C00, $C6C6C6FE, $C6C6C600, $3C181818, $18183C00, $3C181818
+	dc.l	$D8D87000, $C6CCD8F0, $D8CCC600, $F0606060, $6062FE00, $C6EEFED6, $D6C6C600, $C6E6E6F6
+	dc.l	$DECEC600, $7CC6C6C6, $C6C67C00, $FC66667C, $6060F000, $7CC6C6C6, $C6D67C06, $FCC6C6FC
+	dc.l	$D8CCC600, $7CC6C07C, $06C67C00, $7E5A1818, $18183C00, $C6C6C6C6, $C6C67C00, $C6C6C6C6
+	dc.l	$6C381000, $C6C6D6D6, $FEEEC600, $C66C3838, $386CC600, $6666663C, $18183C00, $FE860C18
+	dc.l	$3062FE00, $7C606060, $60607C00, $C0603018, $0C060200, $7C0C0C0C, $0C0C7C00, $10386CC6
+	dc.l	$00000000, $00000000, $000000FF, $30301800, $00000000, $0000780C, $7CCC7E00, $E0607C66
+	dc.l	$6666FC00, $00007CC6, $C0C67C00, $1C0C7CCC, $CCCC7E00, $00007CC6, $FEC07C00, $1C3630FC
+	dc.l	$30307800, $000076CE, $C67E067C, $E0607C66, $6666E600, $18003818, $18183C00, $0C001C0C
+	dc.l	$0C0CCC78, $E060666C, $786CE600, $18181818, $18181C00, $00006CFE, $D6D6C600, $0000DC66
+	dc.l	$66666600, $00007CC6, $C6C67C00, $0000DC66, $667C60F0, $000076CC, $CC7C0C1E, $0000DC66
+	dc.l	$6060F000, $00007CC0, $7C067C00, $3030FC30, $30361C00, $0000CCCC, $CCCC7600, $0000C6C6
+	dc.l	$6C381000, $0000C6C6, $D6FE6C00, $0000C66C, $386CC600, $0000C6C6, $CE76067C, $0000FC98
+	dc.l	$3064FC00, $0E181870, $18180E00, $18181800, $18181800, $7018180E, $18187000, $76DC0000
+	dc.l	$00000000, $43FA090A, $0C59DEB2, $667270FE, $D05974FC, $76004841, $024100FF, $D241D241
+	dc.l	$B240625C, $675E2031, $10006758, $47F10800, $48417000, $301BB253, $654C43F3, $08FE45E9
+	dc.l	$FFFCE248, $C042B273, $00006514, $6204D6C0, $601A47F3, $0004200A, $908B6AE6, $594B600C
+	dc.l	$45F300FC, $200A908B, $6AD847D2, $925B7400, $341BD3C2, $48414241, $4841D283, $70004E75
+	dc.l	$70FF4E75, $48417000, $3001D680, $5283323C, $FFFF4841, $59416A8E, $70FF4E75, $47FA0872
+	dc.l	$0C5BDEB2, $664AD6D3, $78007200, $740045D3, $51CC0006, $16197807, $D603D341, $5242B252
+	dc.l	$620A65EC, $B42A0002, $671265E4, $584AB252, $62FA65DC, $B42A0002, $65D666F0, $10EA0003
+	dc.l	$670A51CF, $FFC64E94, $64C04E75, $53484E75, $70004E75, $4EFA0024, $4EFA0018, $760F3401
+	dc.l	$E84AC443, $10FB205C, $51CF004A, $4E946444, $4E754841, $61046548, $4841E959, $780FC841
+	dc.l	$10FB4040, $51CF0006, $4E946534, $E959780F, $C84110FB, $402E51CF, $00064E94, $6522E959
+	dc.l	$780FC841, $10FB401C, $51CF0006, $4E946510, $E959760F, $C24310FB, $100A51CF, $00044ED4
+	dc.l	$4E753031, $32333435, $36373839, $41424344, $45464841, $67066106, $65E6609C, $4841E959
+	dc.l	$780FC841, $670E10FB, $40DA51CF, $FFA04E94, $649A4E75, $E959780F, $C841670E, $10FB40C4
+	dc.l	$51CFFF9C, $4E946496, $4E75E959, $780FC841, $679E10FB, $40AE51CF, $FF984E94, $64924E75
+	dc.l	$4EFA0026, $4EFA001A, $74077018, $D201D100, $10C051CF, $00064E94, $650451CA, $FFEE4E75
+	dc.l	$48416104, $65184841, $740F7018, $D241D100, $10C051CF, $00064E94, $650451CA, $FFEE4E75
+	dc.l	$4EFA0010, $4EFA0048, $47FA009A, $024100FF, $600447FA, $008C4200, $7609381B, $34039244
+	dc.l	$55CAFFFC, $D2449443, $44428002, $670E0602, $003010C2, $51CF0006, $4E946510, $381B6ADC
+	dc.l	$06010030, $10C151CF, $00044ED4, $4E7547FA, $002E4200, $7609281B, $34039284, $55CAFFFC
+	dc.l	$D2849443, $44428002, $670E0602, $003010C2, $51CF0006, $4E9465D4, $281B6ADC, $609E3B9A
+	dc.l	$CA0005F5, $E1000098, $9680000F, $42400001, $86A00000, $2710FFFF, $03E80064, $000AFFFF
+	dc.l	$271003E8, $0064000A, $FFFF48C1, $60084EFA, $00064881, $48C148E7, $50604EBA, $FD486618
+	dc.l	$2E814EBA, $FDD84CDF, $060A650A, $08030003, $66044EFA, $00B64E75, $4CDF060A, $08030002
+	dc.l	$670847FA, $000A4EFA, $00B470FF, $60DE3C75, $6E6B6E6F, $776E3E00, $10FC002B, $51CF0006
+	dc.l	$4E9465D2, $48414A41, $6700FE72, $6000FE68, $08030003, $66C04EFA, $FDFA48E7, $F81010D9
+	dc.l	$5FCFFFFC, $6E146718, $16207470, $C4034EBB, $201A64EA, $4CDF081F, $4E754E94, $64E060F4
+	dc.l	$53484E94, $4CDF081F, $4E7547FA, $FDA8B702, $D4024EFB, $205A4E71, $4E7147FA, $FEA4B702
+	dc.l	$D4024EFB, $204A4E71, $4E7147FA, $FE54B702, $D4024EFB, $203A5348, $4E7547FA, $FF2E7403
+	dc.l	$C403D442, $4EFB2028, $4E714A40, $6B084A81, $67164EFA, $FF644EFA, $FF78265A, $10DB57CF
+	dc.l	$FFFC67D2, $4E9464F4, $4E755248, $6032504B, $321A4ED3, $584B221A, $4ED35547, $6028504B
+	dc.l	$321A6004, $584B221A, $6A084481, $10FC002D, $600410FC, $002B51CF, $00064E94, $65CA4ED3
+	dc.l	$51CFFFC6, $4ED46506, $524810D9, $4E755447, $53494ED4, $4BF900C0, $00044DED, $FFFC4A51
+	dc.l	$6B102A99, $41D23818, $4EBA023C, $43E90020, $60EC5449, $2ABCC000, $00007000, $76033C80
+	dc.l	$34193C82, $34196AFA, $72004EBB, $204C51CB, $FFEE2A19, $200B4840, $024000FF, $00405D00
+	dc.l	$48402640, $4E6326C5, $26C526D9, $26D92A85, $70003219, $61122ABC, $40000000, $72006108
+	dc.l	$3ABC8174, $2A854E75, $2C802C80, $2C802C80, $2C802C80, $2C802C80, $51C9FFEE, $4E754CAF
+	dc.l	$00030004, $48E76010, $4E6B240B, $48424202, $0C425D00, $661C342B, $00040242, $E000C2EB
+	dc.l	$000ED441, $D440D440, $36823742, $0004504B, $36DB4CDF, $08064E75, $2F0B4E6B, $200B4840
+	dc.l	$42000C40, $5D006612, $72003213, $02411FFF, $82EB000E, $20014840, $E248265F, $4E752F0B
+	dc.l	$2F004E6B, $200B4840, $42000C40, $5D006616, $302B0004, $D06B000E, $02405FFF, $36803740
+	dc.l	$0004504B, $36DB201F, $265F4E75, $2F0B2F00, $4E6B200B, $48404200, $0C405D00, $66043741
+	dc.l	$000C201F, $265F4E75, $2F0B2F00, $4E6B200B, $48404200, $0C405D00, $6606504B, $36C136C1
+	dc.l	$201F265F, $4E7561C4, $487AFF94, $48E77F12, $4E6B240B, $48424202, $0C425D00, $66282A1B
+	dc.l	$2E1B4C93, $005C4846, $4DF900C0, $00002D45, $00044845, $72001218, $6E126B32, $4893001C
+	dc.l	$484548E3, $05004CDF, $48FE4E75, $51CB0012, $D642DE86, $0887001D, $2D470004, $2A074845
+	dc.l	$D2443C81, $54457200, $12186EE0, $67CE0241, $001E4EFB, $1002DE86, $721D0387, $6020602A
+	dc.l	$602E6036, $603E1418, $60141818, $60D8603A, $1218D241, $76804843, $CE834841, $8E813602
+	dc.l	$2D470004, $2A074845, $60BC0244, $9FFF60B6, $02449FFF, $00442000, $60AC0244, $9FFF0044
+	dc.l	$400060A2, $00446000, $609C3F04, $1E98381F, $6094487A, $FECA2F0C, $49FA0016, $4FEFFFF0
+	dc.l	$41D77E0E, $4EBAFCF4, $4FEF0010, $285F4E75, $42184447, $0647000F, $90C72F08, $4EBAFF0E
+	dc.l	$205F7E0E, $4E75741E, $10181200, $E609C242, $3CB11000, $D000C042, $3CB10000, $51CCFFEA
+	dc.l	$4E75487A, $00562F0C, $49FA0016, $4FEFFFF0, $41D77E0E, $4EBAFCA4, $4FEF0010, $285F4E75
+	dc.l	$42184447, $0647000F, $90C72F08, $2F0D4BF9, $00C00004, $3E3C9E00, $60023A87, $1E186EFA
+	dc.l	$67100407, $00E067F2, $0C070010, $6DEE5248, $60EA2A5F, $205F7E0E, $4E7533FC, $9E0000C0
+	dc.l	$00044E75, $487AFFF4, $3F072F0D, $4BF900C0, $00043E3C, $9E006002, $3A871E18, $6EFA6710
+	dc.l	$040700E0, $67F20C07, $00106DEE, $524860EA, $2A5F3E1F, $4E7546FC, $27004FEF, $FFF048E7
+	dc.l	$FFFE47EF, $003C4EBA, $F5024EBA, $F3F04CDF, $7FFF487A, $F3CE2F2F, $00144E75, $48E7C456
+	dc.l	$4E6B200B, $48404200, $0C405D00, $66124BF9, $00C00004, $4DEDFFFC, $43FAF558, $4EBAFCF4
+	dc.l	$4CDF6A23, $4E7548E7, $C0D04E6B, $200B4840, $42000C40, $5D00660C, $3F3C0000, $610C610A
+	dc.l	$67FC544F, $4CDF0B03, $4E756174, $41EF0004, $43F900A1, $00036178, $70F0C02F, $00054E75
+	dc.l	$48E7FFFE, $3F3C0000, $61E04BF9, $00C00004, $4DEDFFFC, $61D467F2, $6B4041FA, $00765888
+	dc.l	$D00064FA, $20106F32, $20404FEF, $FFF043FA, $F4E647D7, $2A3C4000, $00034EBA, $FC782ABC
+	dc.l	$82308406, $2A85487A, $000C4850, $4CEF7FFF, $00164E75, $4FEF0010, $60B02ABA, $F47A60AA
+	dc.l	$41F900C0, $000444D0, $6BFC44D0, $6AFC4E75, $12BC0000, $4E7172C0, $1011E508, $12BC0040
+	dc.l	$4E71C001, $12110201, $003F8001, $46001210, $B10110C0, $C20010C1
+	dc.w	$4E75
+	dc.l	DEBUGGER__EXTENSIONS__BTN_A_DEBUGGER, DEBUGGER__EXTENSIONS__BTN_C_DEBUGGER, DEBUGGER__EXTENSIONS__BTN_B_DEBUGGER, $48E700FE, $41FA002A, $4EBAFD1C, $49D77C06, $3F3C2000
+	dc.l	$2F3CE861, $303A41D7, $221C4EBA, $F32C522F, $000251CE, $FFF24FEF, $00224E75, $E0FA01F0
+	dc.l	$26EA4164, $64726573, $73205265, $67697374, $6572733A, $E0E00000, $41FA0088, $4EBAFCD4
+	dc.l	$22780000, $598945D7, $4EBAF284, $B3CA6570, $0C520040, $64642012, $67602040, $02400001
+	dc.l	$66581220, $10200C00, $00616604, $4A01663A, $0C00004E, $660A0201, $00F80C01, $0090672A
+	dc.l	$30200C40, $61006722, $12004200, $0C404E00, $66120C01, $00A8650C, $0C0100BB, $62060C01
+	dc.l	$00B96606, $0C604EB9, $66102F0A, $2F092208, $4EBAF28A, $225F245F, $548A548A, $B3CA6490
+	dc.l	$4E75E0FA, $01F026EA, $4261636B, $74726163, $653AE0E0
+	dc.w	$0000
+
+; ---------------------------------------------------------------
+; MD Debugger's exported symbols
+; ---------------------------------------------------------------
+
+MDDBG__ErrorHandler: equ ErrorHandler+$0
+MDDBG__Error_IdleLoop: equ ErrorHandler+$128
+MDDBG__Error_InitConsole: equ ErrorHandler+$142
+MDDBG__Error_MaskStackBoundaries: equ ErrorHandler+$14E
+MDDBG__Error_DrawOffsetLocation: equ ErrorHandler+$1B8
+MDDBG__Error_DrawOffsetLocation2: equ ErrorHandler+$1BC
+MDDBG__Error_DrawOffsetLocation__inj: equ ErrorHandler+$1C2
+MDDBG__ErrorHandler_SetupVDP: equ ErrorHandler+$250
+MDDBG__ErrorHandler_VDPConfig: equ ErrorHandler+$286
+MDDBG__ErrorHandler_VDPConfig_Nametables: equ ErrorHandler+$29C
+MDDBG__ErrorHandler_ConsoleConfig_Initial: equ ErrorHandler+$2D8
+MDDBG__ErrorHandler_ConsoleConfig_Shared: equ ErrorHandler+$2DC
+MDDBG__Str_OffsetLocation_24bit: equ ErrorHandler+$30C
+MDDBG__Str_OffsetLocation_32bit: equ ErrorHandler+$315
+MDDBG__Art1bpp_Font: equ ErrorHandler+$350
+MDDBG__GetSymbolByOffset: equ ErrorHandler+$64A
+MDDBG__FormatString: equ ErrorHandler+$960
+MDDBG__Console_Init: equ ErrorHandler+$A3A
+MDDBG__Console_Reset: equ ErrorHandler+$A78
+MDDBG__Console_InitShared: equ ErrorHandler+$A7A
+MDDBG__Console_SetPosAsXY_Stack: equ ErrorHandler+$AC4
+MDDBG__Console_SetPosAsXY: equ ErrorHandler+$ACA
+MDDBG__Console_GetPosAsXY: equ ErrorHandler+$AFE
+MDDBG__Console_StartNewLine: equ ErrorHandler+$B24
+MDDBG__Console_SetBasePattern: equ ErrorHandler+$B52
+MDDBG__Console_SetWidth: equ ErrorHandler+$B6E
+MDDBG__Console_WriteLine_WithPattern: equ ErrorHandler+$B8C
+MDDBG__Console_WriteLine: equ ErrorHandler+$B8E
+MDDBG__Console_Write: equ ErrorHandler+$B92
+MDDBG__Console_WriteLine_Formatted: equ ErrorHandler+$C58
+MDDBG__Console_Write_Formatted: equ ErrorHandler+$C5C
+MDDBG__Decomp1bpp: equ ErrorHandler+$C8C
+MDDBG__KDebug_WriteLine_Formatted: equ ErrorHandler+$CA8
+MDDBG__KDebug_Write_Formatted: equ ErrorHandler+$CAC
+MDDBG__KDebug_FlushLine: equ ErrorHandler+$D00
+MDDBG__KDebug_WriteLine: equ ErrorHandler+$D0A
+MDDBG__KDebug_Write: equ ErrorHandler+$D0E
+MDDBG__ErrorHandler_ConsoleOnly: equ ErrorHandler+$D3C
+MDDBG__ErrorHandler_ClearConsole: equ ErrorHandler+$D62
+MDDBG__ErrorHandler_PauseConsole: equ ErrorHandler+$D8C
+MDDBG__ErrorHandler_PagesController: equ ErrorHandler+$DC6
+MDDBG__VSync: equ ErrorHandler+$E26
+MDDBG__ErrorHandler_ExtraDebuggerList: equ ErrorHandler+$E60
+MDDBG__Debugger_AddressRegisters: equ ErrorHandler+$E6C
+MDDBG__Debugger_Backtrace: equ ErrorHandler+$EB8
+
+; ---------------------------------------------------------------
 ; WARNING!
 ;	DO NOT put any data from now on! DO NOT use ROM padding!
 ;	Symbol data should be appended here after ROM is compiled
 ;	by ConvSym utility, otherwise debugger modules won't be able
 ;	to resolve symbol names.
-; -------------------------------------------------------------------------
-
-	else
-Exception	EQU	ICD_BLK
-AddressError	EQU	ICD_BLK
-IllegalInstr	EQU	ICD_BLK
-DivideByZero	EQU	ICD_BLK
-	endif
-
-; -------------------------------------------------------------------------
+; ---------------------------------------------------------------

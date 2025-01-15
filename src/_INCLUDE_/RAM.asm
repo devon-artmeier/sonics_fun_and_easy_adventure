@@ -173,15 +173,13 @@ r_Stack_Base	rs.b	0				; ''
 ; Title screen variables
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------
 		rsset	r_Game_Vars
-
-r_FMV_Y		rs.l	1
-r_FMV_Y_Vel	rs.w	1
-r_FMV_Flag	rs.b	1
-r_FMV_Time	rs.b	1
-
-r_FMV_Frame	rs.b	1				; FMV frame
+r_FMV_DMA_Size	rs.w	1				; FMV packet DMA size
+r_FMV_Y		rs.l	1				; FMV Y position
+r_FMV_Y_Vel	rs.w	1				; FMV Y velocity
+r_FMV_Ready	rs.b	1				; FMV ready flag
+r_FMV_Frame	rs.b	1				; FMV frame ID
+r_FMV_Packet	rs.w	1				; FMV packet ID
 r_FMV_Plane	rs.b	1				; FMV plane ID
-r_FMV_Load	rs.b	1				; FMV load data flag
 
 r_Logo_Angle	rs.b	1				; Base logo hover angle
 
