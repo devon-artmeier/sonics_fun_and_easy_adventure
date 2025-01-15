@@ -132,13 +132,13 @@ VInt_SEGA:
 		cmpi.w	#16,r_FMV_Packet.w		; Is it time to play the chant?
 		bne.s	.NoChant			; If not, branch
 
-		moveq	#10-1,d0			; Wait a little
+		moveq	#5-1,d0				; Wait a little
 		bsr.w	SEGA_Wait			; ''
 		
 		lea	SampleList+$D0,a3		; Play chant
 		jsr	PlayDAC1			; ''
 		
-		moveq	#120-1,d0			; Wait some more
+		moveq	#110-1,d0			; Wait some more
 		bsr.w	SEGA_Wait			; ''
 	
 .NoChant:
