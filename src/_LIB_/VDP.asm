@@ -29,7 +29,7 @@ InitVDP:
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------
 ClearScreen:
 		lea	VDP_CTRL,a6			; VDP control port
-		dmaFill	0,$C000,$3000			; Clear planes
+		dmaFill	0,$A000,$5000			; Clear planes
 
 		clrRAM	r_HScroll, r_VScroll_End	; Clear scroll tables
 		
