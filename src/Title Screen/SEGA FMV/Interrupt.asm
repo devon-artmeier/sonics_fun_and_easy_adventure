@@ -163,6 +163,14 @@ VInt_SEGA:
 .End:
 		pop.l	d0-a6				; Restore registers
 		lagOn					; Turn on the lag-o-meter
+
+		tst.b	r_P1_Press.w			; Has the start button been pressed?
+		bpl.s	.NoFMVEnd			; If not, branch
+		
+		move.w	#43,r_FMV_Packet.w		; End the FMV
+		move.l	#SEGA_End,2(sp)			; ''
+
+.NoFMVEnd:
 		rte
 ; ---------------------------------------------------------------------------------------------------------------------------------------------------------
 .Palette:
@@ -191,17 +199,13 @@ SEGA_Wait:
 		move.l	#VInt_Standard,r_VInt_Addr.w	; ''
 
 .WaitSEGA:
-		move.b	#vTitle,r_VINT_Rout.w		; V-INT routine
+		move.b	#vGeneral,r_VINT_Rout.w		; V-INT routine
 		jsr	VSync_Routine			; V-SYNC
 		
 		tst.b	r_P1_Press.w			; Has the start button been pressed?
-		bmi.s	.EndFMV				; If so, branch
-		
+		bmi.s	.End				; If so, branch
+
 		dbf	d0,.WaitSEGA			; Loop until finished
-		bra.s	.End				; Continue
-		
-.EndFMV:
-		move.l	#SEGA_End,(sp)			; End the FMV
 
 .End:
 		intsOff					; Switch V-BLANK interrupt back
