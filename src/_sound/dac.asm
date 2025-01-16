@@ -26,9 +26,8 @@ SampleList:
 	sample	$0104, Title,		Title,		Title		; 8C
 	sample	$0104, Sega,		Stop,		Sega		; 8D
 	sample	$0104, Punch,		Stop,		Punch		; 8E
-	sample	$0114, EndingSong,	EndingSong,	EndingSong	; 8F
+	sample	$0104, EndingSong,	EndingSong,	EndingSong	; 8F
 	sample	$0114, BinBowie,	Stop,		BinBowie	; 90
-	sample	$0114, Wacky_Base_Loud,	Stop,		WackyBase	; 91
 SampleList_End:
 
 ; -------------------------------------------------------------------------

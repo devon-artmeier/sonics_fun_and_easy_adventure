@@ -136,9 +136,6 @@ Level_NoFade:
 		beq.s	.Finalize			; If not, branch
 		move.b	#$1B,(r_Obj_Player+oAni).w	; Set to falling animation
 		clr.b	r_Start_Fall.w			; Clear the flag
-		
-		lea	SampleList+$110,a3
-		jsr	PlayDAC1
 
 .Finalize:
 		; --- Finalize initialzation ---

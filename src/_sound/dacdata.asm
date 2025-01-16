@@ -14,6 +14,5 @@
 	incSWF	Punch,		"_sound/dac/incswf/Punch.swf"
 	incSWF	EndingSong,	"_sound/dac/incswf/EndingSong.swf"
 	incSWF	BinBowie,	"_sound/dac/incswf/BinBowie.swf"
-	incSWF	Wacky_Base_Loud,"_sound/dac/incswf/Wacky_Base_Loud.swf"
 
 ; -------------------------------------------------------------------------
