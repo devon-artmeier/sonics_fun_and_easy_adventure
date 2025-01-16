@@ -16,9 +16,9 @@ segaIntLoadArt macro vram
 		sub.w	r_FMV_DMA_Size,d0		; ''
 		beq.s	.End\@				; If it's 0, branch
 		
-		cmpi.w	#$1000,d0			; Is it too large?
+		cmpi.w	#$2000,d0			; Is it too large?
 		bcs.s	.GetDMAInfo\@			; If not, branch
-		move.w	#$1000,d0			; If so, cap it
+		move.w	#$2000,d0			; If so, cap it
 		
 .GetDMAInfo\@:
 		move.l	#r_Buffer&$FFFFFF,d1		; Get DMA source
@@ -199,7 +199,7 @@ SEGA_Wait:
 		move.l	#VInt_Standard,r_VInt_Addr.w	; ''
 
 .WaitSEGA:
-		move.b	#vGeneral,r_VINT_Rout.w		; V-INT routine
+		move.b	#vTitle,r_VINT_Rout.w		; V-INT routine
 		jsr	VSync_Routine			; V-SYNC
 		
 		tst.b	r_P1_Press.w			; Has the start button been pressed?
