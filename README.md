@@ -4,12 +4,22 @@ This is the source code for Sonic's Fun and Easy Adventure. Mainly just here for
 
 ## Credits
 
-* Devon - Project lead and programming
-* BinBowie - Main level music and easter egg art
-* VAdaPEGA - MegaGWolf's "gwolfW" emote sprite
-* Natsumi - AMPS
-* MarkeyJester - Dual PCM and shortened Mega Drive initialization code
-* vladikcomper - Improved KosDec, with help from Flamewing and MarkeyJester
+* Devon
+  * Project lead and programming
+* BinBowie
+  * Stage music (BYE-BYE by Uchoten)
+  * Easter egg art
+* VAdaPEGA
+  * MegaGWolf's "gwolfW" emote sprite
+* vladikcomper, Flamewing, MarkeyJester
+  * Improved KosDec
+* Flamewing
+  * Ultra DMA Queue
+* MarkeyJester
+  * Dual PCM
+  * Shortened Mega Drive initialization code
+* Natsumi
+  * AMPS
 
 ## Final Notes
 
